@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinZodiac: Daily Budget Gamification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for FinZodiac */
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #E0F2F7; /* Light blue background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top for better scroll behavior */
+            min-height: 100vh; /* Ensure it takes full viewport height */
+            padding: 20px; /* Add some padding around the content */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px; /* Max width similar to a mobile app for focused experience */
+            background-color: transparent; /* Container itself is transparent */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px; /* Space between cards */
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .title {
+            font-size: 2.5rem; /* 40px */
+            font-weight: 800; /* Extra bold */
+            color: #312E81; /* Deep indigo */
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.125rem; /* 18px */
+            color: #4F46E5; /* Indigo */
+        }
+
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 1rem; /* 16px rounded corners */
+            padding: 1.5rem; /* 24px padding */
+            width: 100%;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Tailwind shadow-md */
+            text-align: center;
+        }
+
+        .card-title {
+            font-size: 1.375rem; /* 22px */
+            font-weight: 700; /* Bold */
+            color: #312E81;
+            margin-bottom: 1rem; /* 16px */
+        }
+
+        .mood-text {
+            font-size: 2.25rem; /* 36px */
+            font-weight: 700; /* Bold */
+            color: #F59E0B; /* Amber */
+            margin-bottom: 0.75rem; /* 12px */
+        }
+
+        .horoscope-text {
+            font-size: 1rem; /* 16px */
+            color: #4B5563; /* Gray */
+            line-height: 1.5; /* 24px */
+        }
+
+        .mission-text {
+            font-size: 1.125rem; /* 18px */
+            font-weight: 600; /* Semi-bold */
+            color: #10B981; /* Emerald green */
+            margin-bottom: 0.75rem; /* 12px */
+        }
+
+        .mission-reward {
+            font-size: 1rem; /* 16px */
+            color: #6B7280; /* Gray */
+            margin-bottom: 1.25rem; /* 20px */
+        }
+
+        .button {
+            background-color: #4F46E5; /* Indigo */
+            padding: 0.75rem 1.5rem; /* 12px 24px */
+            border-radius: 9999px; /* Fully rounded (pill shape) */
+            color: #FFFFFF;
+            font-size: 1.125rem; /* 18px */
+            font-weight: 700; /* Bold */
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: none; /* Remove default button border */
+        }
+
+        .button:hover {
+            background-color: #6366F1; /* Lighter indigo on hover */
+            transform: translateY(-1px); /* Slight lift effect */
+        }
+
+        .button:active {
+            transform: translateY(0); /* Press down effect */
+        }
+
+        .button.completed {
+            background-color: #10B981; /* Emerald green when completed */
+            cursor: not-allowed;
+        }
+
+        .button.completed:hover {
+            background-color: #10B981; /* No change on hover when completed */
+            transform: translateY(0);
+        }
+
+        .placeholder-text {
+            font-size: 0.875rem; /* 14px */
+            color: #6B7280;
+            margin-bottom: 0.25rem; /* 4px */
+        }
+
+        .message-container {
+            background-color: #FEF2F2; /* Light red */
+            padding: 1rem; /* 16px */
+            border-radius: 0.5rem; /* 8px */
+            margin-bottom: 1.25rem; /* 20px */
+            width: 100%;
+            text-align: center;
+            border: 1px solid #EF4444; /* Red border */
+        }
+
+        .message-text {
+            color: #DC2626; /* Red */
+            font-size: 1rem; /* 16px */
+        }
+
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px; /* Ensure it takes up some space */
+            color: #6366F1;
+            font-size: 1.125rem;
+            font-weight: 500;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #6366F1;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">FinZodiac</h1>
+            <p class="subtitle">Daily Budget Gamification</p>
+        </header>
+
+        <div id="messageContainer" class="message-container hidden">
+            <p id="messageText" class="message-text"></p>
+        </div>
+
+        <div id="loadingContainer" class="loading-container">
+            <div class="spinner"></div>
+            <p>Fetching your financial horoscope...</p>
+        </div>
+
+        <div id="contentCards" class="w-full flex flex-col items-center gap-5 hidden">
+            <div class="card">
+                <h2 class="card-title">Your Finance Mood Today</h2>
+                <p id="financeMood" class="mood-text"></p>
+                <p id="horoscope" class="horoscope-text"></p>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Daily Financial Mission</h2>
+                <p id="missionDescription" class="mission-text"></p>
+                <p id="missionReward" class="mission-reward"></p>
+                <button id="completeMissionBtn" class="button">Complete Mission</button>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Your Progress</h2>
+                <p class="placeholder-text">Weekly Savings Streak: 7 days 🔥</p>
+                <p class="placeholder-text">Total Points: 1250</p>
+                <p class="placeholder-text">Leaderboard & Monthly Reports coming soon!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Base URL for the Node.js backend API
+        // IMPORTANT: Adjust this if your backend is running on a different IP/port
+        const API_BASE_URL = 'http://localhost:3000'; // Ensure your Node.js backend is running on this port
+
+        // Get DOM elements
+        const messageContainer = document.getElementById('messageContainer');
+        const messageText = document.getElementById('messageText');
+        const loadingContainer = document.getElementById('loadingContainer');
+        const contentCards = document.getElementById('contentCards');
+
+        const financeMoodElement = document.getElementById('financeMood');
+        const horoscopeElement = document.getElementById('horoscope');
+        const missionDescriptionElement = document.getElementById('missionDescription');
+        const missionRewardElement = document.getElementById('missionReward');
+        const completeMissionBtn = document.getElementById('completeMissionBtn');
+
+        let missionCompleted = false; // State to track mission completion
+
+        // Function to display messages
+        function showMessage(msg, isError = false) {
+            messageText.textContent = msg;
+            messageContainer.classList.remove('hidden');
+            if (isError) {
+                messageContainer.classList.add('bg-red-100', 'border-red-400', 'text-red-700');
+                messageText.classList.add('text-red-700');
+            } else {
+                messageContainer.classList.remove('bg-red-100', 'border-red-400', 'text-red-700');
+                messageText.classList.remove('text-red-700');
+                messageContainer.classList.add('bg-green-100', 'border-green-400', 'text-green-700');
+                messageText.classList.add('text-green-700');
+            }
+        }
+
+        // Function to hide messages
+        function hideMessage() {
+            messageContainer.classList.add('hidden');
+        }
+
+        // Function to fetch financial horoscope and mission data from the backend
+        async function fetchFinZodiacData() {
+            loadingContainer.classList.remove('hidden'); // Show loading spinner
+            contentCards.classList.add('hidden'); // Hide content cards
+            hideMessage(); // Clear any previous messages
+            missionCompleted = false; // Reset mission status
+            completeMissionBtn.classList.remove('completed');
+            completeMissionBtn.textContent = 'Complete Mission';
+            completeMissionBtn.disabled = false;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/daily-finzodiac`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                // Update DOM with fetched data
+                financeMoodElement.textContent = data.financeMood;
+                horoscopeElement.textContent = data.horoscope;
+                missionDescriptionElement.textContent = data.mission.description;
+                missionRewardElement.textContent = `Reward: ${data.mission.rewardPoints} Points`;
+
+                contentCards.classList.remove('hidden'); // Show content cards
+            } catch (error) {
+                console.error("Error fetching FinZodiac data:", error);
+                showMessage(`Failed to load FinZodiac data: ${error.message}. Ensure backend is running.`, true);
+            } finally {
+                loadingContainer.classList.add('hidden'); // Hide loading spinner
+            }
+        }
+
+        // Function to handle mission completion
+        function handleCompleteMission() {
+            // In a real app, this would send a request to the backend to record completion
+            // and potentially update user's points/streak.
+            if (!missionCompleted) {
+                missionCompleted = true;
+                completeMissionBtn.classList.add('completed');
+                completeMissionBtn.textContent = 'Mission Completed!';
+                completeMissionBtn.disabled = true;
+                showMessage("Mission Complete! Great job! You earned points for completing your financial mission.", false);
+                // Optionally, refresh data after a short delay or based on backend response
+                // setTimeout(fetchFinZodiacData, 2000);
+            }
+        }
+
+        // Add event listener to the "Complete Mission" button
+        completeMissionBtn.addEventListener('click', handleCompleteMission);
+
+        // Fetch data when the page loads
+        window.onload = fetchFinZodiacData;
+    </script>
+</body>
+</html>
